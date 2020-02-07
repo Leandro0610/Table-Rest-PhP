@@ -1,16 +1,18 @@
 <?php
-
 $url = "https://jsonplaceholder.typicode.com/users"; 
 $data = file_get_contents($url); 
 $users = json_decode($data,1);
 $match = "";
+$resultSearch = 1;
 
 if (isset($_GET['filtro'])) {
   if (($_GET['filtro'] != '')&&($_GET['valorFiltro'] != '')) {
+    $resultSearch = 0;
     foreach ($users as $user) {
       $arrayExplode = explode(" ",$user[$_GET['filtro']]);
       if (array_search($_GET['valorFiltro'],$arrayExplode)!== false) {
         $match = $user[$_GET['filtro']];
+        $resultSearch = 1;
       }
     }
   }
@@ -28,75 +30,36 @@ if (isset($_GET['dir'])) {
   }
 }
 ?>
-
 <!DOCTYPE html>
 <html lang="pt-br">
   <head>
+      <link rel="stylesheet" type="text/css" href="index.css"/>
       <meta charset="UTF-8">
       <title>Table Api Rest</title>
   </head>
-
-  <style>
-
-  h1,label {
-    font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
-  }
-
-  #clientTable {
-    font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
-    border-collapse: collapse;
-    width: 100%;
-  }
-
-  #clientTable td, #clientTable th {
-    border: 1px solid #ddd;
-    padding: 8px;
-  }
-
-  #clientTable tr:nth-child(even){background-color: #f2f2f2;}
-
-  #clientTable tr:hover {background-color: #ddd;}
-
-  #clientTable th {
-    padding-top: 12px;
-    padding-bottom: 12px;
-    text-align: left;
-    background-color: #343252;
-    color: white;
-  }
-
-  #btnShowInfo {
-    font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
-    cursor: pointer;
-    padding: 5px;
-    box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2);
-    box-shadow: 0 2px 8px 0 rgba(0,0,0,0.15);
-    border: 0;
-    background: #7bda7b;
-    color: white;
-    border-radius: 3px;
-    font-size: 16px;
-    float: right;
-  }
-  </style>
   <body>
     <h1>Clientes</h1>
     <hr>
     <br>
+    <div id="myModal" class="modal">
+      <div class="modal-content">
+        <span class="close">&times;</span>
+        <p id = "pInfo"></p>
+      </div>
+    </div>
     <form action="index.php">
-    <label>Pesquisar por:</label>
-    <select name = "filtro">
+    <input type="text" name="valorFiltro" id="filtro">
+    <select name = "filtro" style = "height: 2.3em; border-radius:3px;" >
       <option value="name">Nome</option>
       <option value="username">Usuário</option>
       <option value="email">E-mail</option>
       <option value="phone">Telefone</option>
     </select>
-    <input type="text" name="valorFiltro" id="filtro">
-    <input type="submit" value="Pesquisar">
+    <input type="submit" class = "btnPadrao Pesquisa" value="Pesquisar">
     </form> 
+    <br>
     <table id = "clientTable">
       <tr>
-        
         <th>
           Nome
           <a href="index.php?dir=desc&field=name">
@@ -138,10 +101,12 @@ if (isset($_GET['dir'])) {
         </th>
         <th></th>
       </tr>
-      <?php foreach ($users as $user) { 
-              if ( ($match!=='') && ($match!==$user[$_GET['filtro']]) ) {
-                continue;
-              }
+      <?php 
+      if ($resultSearch != 0) {
+        foreach ($users as $user) { 
+          if ( ($match!=='') && ($match!==$user[$_GET['filtro']]) ) {
+            continue;
+          }
       ?>
       <tr>
         <td> <?php echo $user['name']; ?> </td>
@@ -150,17 +115,41 @@ if (isset($_GET['dir'])) {
         <td> 
           <?php echo $user['phone']; ?> 
         </td>
-        <td width = "1%"><button onclick = "showInfo(this)" id = "btnShowInfo"> Visualizar </button></td>  
+        <td width = "1%"><button class = "btnPadrao Visualizar" id = "btnShowInfo"> Visualizar </button></td>  
        </tr>
-      <?php }; ?>
+      <?php } } ?>
     </table>
-    <script>
-        function showInfo(btn) {
-          console.log(btn.parentNode.parentNode.getElementsByTagName('td')[0].innerText)
-          console.log(btn.parentNode.parentNode.getElementsByTagName('td')[1].innerText)
-          console.log(btn.parentNode.parentNode.getElementsByTagName('td')[2].innerText)
-          console.log(btn.parentNode.parentNode.getElementsByTagName('td')[3].innerText)
+    <br>
+    <div id = "noResults"> <?php if ($resultSearch == 0) echo "Não Foram Encontrados Resultados" ?> </div>
+     <script>
+      var modal = document.getElementById("myModal");
+      var btn = document.getElementsByTagName("button");
+      var span = document.getElementsByClassName("close")[0];
+      var btnList = Array.prototype.slice.call(btn);
+      
+      btnList.forEach(myFunction);
+
+      function myFunction(item, index) {
+        item.onclick = function() {
+          var nome = item.parentNode.parentNode.getElementsByTagName('td')[0].innerText;
+          var usuario = item.parentNode.parentNode.getElementsByTagName('td')[1].innerText;
+          var email = item.parentNode.parentNode.getElementsByTagName('td')[2].innerText;
+          var telefone = item.parentNode.parentNode.getElementsByTagName('td')[3].innerText;
+          var info = document.getElementById('pInfo');
+          info.innerHTML = ''
+          var textoInfo = document.createTextNode('Nome: '+nome+' - Usuário: '+ usuario+ ' - E-mail: '+email+' - Telefone: '+telefone);
+          info.appendChild(textoInfo);  
+          modal.style.display = "block";
         }
+        span.onclick = function() {
+          modal.style.display = "none";
+        }
+        window.onclick = function(event) {
+          if (event.target == modal) {
+            modal.style.display = "none";
+          }
+        }
+      }
     </script>    
   </body>
 </html>
